@@ -34,19 +34,8 @@ pub fn solution(input: &[u8]) -> u32 {
 }
 
 
-pub fn solution_complex(input: &[u8]) -> u32 {
-	let mut lines = vec![];
-	let mut last = 0;
-	for (i, char) in input.iter().enumerate() {
-		if *char == b'\n' {
-			lines.push(last..i);
-			last = i + 1;
-		}
-	}
-
-	lines.into_iter()
-		.map(|e| &input[e])
-		.map(|e| solve_line(e) as u32).sum()
+pub fn solution_complex(input: &str) -> u32 {
+	input.lines().map(|l| solve_line(l.as_bytes()) as u32).sum()
 }
 
 fn solve_line(input: &[u8]) -> u8 {
@@ -132,7 +121,7 @@ xtwone3four
 4nineeightseven2
 zoneight234
 7pqrstsixteen
-".to_owned().into_bytes();
+";
 		assert_eq!(crate::solution_complex(&mut input), 281);
 	}
 
@@ -179,7 +168,7 @@ zoneight234
 
 	#[test]
 	fn run_complex() {
-		let mut file = fs::read("input.txt").unwrap();
+		let mut file = fs::read_to_string("input.txt").unwrap();
 		let res = crate::solution_complex(&mut file);
 		assert_eq!(res, 54530);
 	}

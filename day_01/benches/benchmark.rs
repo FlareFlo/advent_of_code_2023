@@ -9,7 +9,7 @@ fn bench_simple(c: &mut Criterion) {
 }
 
 fn bench_complex(c: &mut Criterion) {
-	let mut input = fs::read("input.txt").unwrap();
+	let mut input = fs::read_to_string("input.txt").unwrap();
 	c.bench_function("solution day 1 part 2", |b| b.iter(|| solution_complex(&mut input)));
 }
 
