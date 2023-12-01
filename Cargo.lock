@@ -75,6 +75,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "day_01"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "itertools",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "day_name"
 version = "0.1.0"
 dependencies = [

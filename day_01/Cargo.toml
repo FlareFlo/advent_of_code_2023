@@ -1,0 +1,10 @@
+[package]
+name = "day_01"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = "1.0"
+serde_json = "1.0"
+itertools = "0.12"
+color-eyre = "0.6.2"
