@@ -84,6 +84,8 @@ pub fn solution_complex(input: &mut [u8]) -> u32 {
 
 #[cfg(test)]
 mod test {
+	use std::fs;
+
 	#[test]
 	fn simple() {
 		let input = "1abc2
@@ -105,5 +107,17 @@ zoneight234
 7pqrstsixteen
 ".to_owned().into_bytes();
 		assert_eq!(crate::solution_complex(&mut input), 281);
+	}
+
+	#[test]
+	fn run_simple() {
+		let file = fs::read("input.txt").unwrap();
+		println!("{}", crate::solution(&file));
+	}
+
+	#[test]
+	fn run_complex() {
+		let mut file = fs::read("input.txt").unwrap();
+		println!("{}", crate::solution_complex(&mut file));
 	}
 }
