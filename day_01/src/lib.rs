@@ -33,7 +33,7 @@ pub fn solution(input: &[u8]) -> u32 {
 	let mut right = None;
 	for char in input {
 		match char {
-			b'0'..=b'9' => {
+			b'1'..=b'9' => {
 				if left.is_none() { left = Some(*char as u32 - 48) } else { right = Some(*char as u32 - 48) }
 			}
 			b'\n' => {
@@ -51,15 +51,20 @@ fn replace_number_to_digit(input: &mut [u8]) -> usize {
 	let len = input.len();
 	let mut candidates = ALL;
 	for i in 0..5_usize {
-		if i >= input.len() || input[i] == b'\n' { return 1; }
+		// dbg!(String::from_utf8_lossy(input));
+		if i >= input.len() { return 1; }
 		for (bytes, byte_len, num, pat) in NUMBERS {
 			if bytes[i] != input[i] {
 				candidates &= !pat;
 			} else {
-				if candidates.count_ones() == 1 && bytes[..len.min(byte_len as usize)] == input[..len.min(byte_len as usize)] {
+				if candidates.count_ones() == 1 &&  byte_len as usize <= len && bytes[..byte_len as usize] == input[..byte_len as usize] {
+
+					// Remove when not debugging
 					for i in 1..byte_len {
 						input[i as usize] = b'_';
 					}
+
+
 					input[0] = num;
 					return byte_len as usize;
 				}
@@ -70,9 +75,26 @@ fn replace_number_to_digit(input: &mut [u8]) -> usize {
 }
 
 fn replace_numbers_to_digits(input: &mut [u8]) {
-	let mut at = 0;
-	while at < input.len() {
-		at += replace_number_to_digit(&mut input[at..]);
+	let mut lines = vec![];
+	let mut last = 0;
+	for (i, char) in input.iter().enumerate() {
+		if *char == b'\n' {
+			lines.push(last..i);
+			last  = i + 1;
+		}
+	}
+	// dbg!(lines.iter().map(|e|String::from_utf8_lossy(&input[e.clone()])).collect::<Vec<_>>());
+	for line in lines {
+		// println!("{}", String::from_utf8_lossy(&input[line.clone()]));
+		if line.len() < 3 {
+			continue;
+		}
+		let line_cropped = &mut input[line.clone()];
+		let mut at = 0;
+		while at < line_cropped.len() {
+			at += replace_number_to_digit(&mut line_cropped[at..]);
+		}
+		// println!("{}", String::from_utf8_lossy(&input[line]));
 	}
 }
 
@@ -118,6 +140,8 @@ zoneight234
 	#[test]
 	fn run_complex() {
 		let mut file = fs::read("input.txt").unwrap();
-		println!("{}", crate::solution_complex(&mut file));
+		let res = crate::solution_complex(&mut file);
+		assert_ne!(res, 54538); // Confirmed wrong
+		println!("{}", res);
 	}
 }
