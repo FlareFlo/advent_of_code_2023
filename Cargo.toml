@@ -7,3 +7,7 @@ members = [
     "day_template",
     "day_01",
 ]
+
+[profile.bench]
+lto = true
+opt-level = 3
