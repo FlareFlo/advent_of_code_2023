@@ -1,6 +1,3 @@
-use std::fs;
-use color_eyre::Report;
-
 const NUMBERS: &[(&str, &str)] = &[
 	("one", "1"),
 	("two", "2"),
@@ -13,18 +10,17 @@ const NUMBERS: &[(&str, &str)] = &[
 	("nine", "9"),
 ];
 
-pub fn solution(input: &str) -> u32 {
+pub fn solution(input: &[u8]) -> u32 {
 	let mut sum = 0;
 
 	let mut left = None;
 	let mut right = None;
-	for char in input.chars() {
+	for char in input {
 		match char {
-			'0'..='9' => {
-				let digit = char.to_digit(10).unwrap();
-				if left.is_none() { left = Some(digit) } else { right = Some(digit) }
+			b'0'..=b'9' => {
+				if left.is_none() { left = Some(*char as u32) } else { right = Some(*char as u32) }
 			}
-			'\n' => {
+			b'\n' => {
 				sum += left.unwrap() * 10 + right.or(left).unwrap();
 				left = None;
 				right = None;
@@ -49,7 +45,7 @@ mod test {
 		a1b2c3d4e5f
 		treb7uchet
 		";
-		assert_eq!(crate::solution(input), 142);
+		assert_eq!(crate::solution(input.as_bytes()), 142);
 	}
 
 	#[test]
