@@ -1,30 +1,16 @@
-// From left to right:
-// bytes for literal integer
-// literal length
-// byte for ascii repr
-// bit-identifier
-const NUMBERS: [([u8; 5], u8, u8, u16); 9] = [
-	(*b"one  ", 3, b'1', ONE),
-	(*b"two  ", 3, b'2', TWO),
-	(*b"three", 5, b'3', THREE),
-	(*b"four ", 4, b'4', FOUR),
-	(*b"five ", 4, b'5', FIVE),
-	(*b"six  ", 3, b'6', SIX),
-	(*b"seven", 5, b'7', SEVEN),
-	(*b"eight", 5, b'8', EIGHT),
-	(*b"nine ", 4, b'9', NINE),
-];
+use std::mem::size_of;
 
-const ALL: u16 = ONE | TWO | THREE | FOUR | FIVE | SIX | SEVEN | EIGHT | NINE;
-const ONE: u16 = 1 << 0;
-const TWO: u16 = 1 << 1;
-const THREE: u16 = 1 << 2;
-const FOUR: u16 = 1 << 3;
-const FIVE: u16 = 1 << 4;
-const SIX: u16 = 1 << 5;
-const SEVEN: u16 = 1 << 6;
-const EIGHT: u16 = 1 << 7;
-const NINE: u16 = 1 << 8;
+const ONE: (u64, u64) = (u64::from_ne_bytes(*b"one\0\0\0\0\0"), u64::from_ne_bytes([255, 255, 255, 0, 0, 0, 0, 0]));
+const TWO: (u64, u64) = (u64::from_ne_bytes(*b"two\0\0\0\0\0"), u64::from_ne_bytes([255, 255, 255, 0, 0, 0, 0, 0]));
+const THREE: (u64, u64) = (u64::from_ne_bytes(*b"three\0\0\0"), u64::from_ne_bytes([255, 255, 255, 255, 255, 0, 0, 0]));
+const FOUR: (u64, u64) = (u64::from_ne_bytes(*b"four\0\0\0\0"), u64::from_ne_bytes([255, 255, 255, 255, 0, 0, 0, 0]));
+const FIVE: (u64, u64) = (u64::from_ne_bytes(*b"five\0\0\0\0"), u64::from_ne_bytes([255, 255, 255, 255, 0, 0, 0, 0]));
+const SIX: (u64, u64) = (u64::from_ne_bytes(*b"six\0\0\0\0\0"), u64::from_ne_bytes([255, 255, 255, 0, 0, 0, 0, 0]));
+const SEVEN: (u64, u64) = (u64::from_ne_bytes(*b"seven\0\0\0"), u64::from_ne_bytes([255, 255, 255, 255, 255, 0, 0, 0]));
+const EIGHT: (u64, u64) = (u64::from_ne_bytes(*b"eight\0\0\0"), u64::from_ne_bytes([255, 255, 255, 255, 255, 0, 0, 0]));
+const NINE: (u64, u64) = (u64::from_ne_bytes(*b"nine\0\0\0\0"), u64::from_ne_bytes([255, 255, 255, 255, 0, 0, 0, 0]));
+
+const NUMS: [(u64, u64); 9] = [ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE];
 
 pub fn solution(input: &[u8]) -> u32 {
 	let mut sum = 0;
@@ -47,62 +33,81 @@ pub fn solution(input: &[u8]) -> u32 {
 	sum
 }
 
-fn replace_number_to_digit(input: &mut [u8]) -> usize {
-	let len = input.len();
-	let mut candidates = ALL;
-	for i in 0..5_usize {
-		// dbg!(String::from_utf8_lossy(input));
-		if i >= input.len() { return 1; }
-		for (bytes, byte_len, num, pat) in NUMBERS {
-			if bytes[i] != input[i] {
-				candidates &= !pat;
-			} else {
-				if candidates.count_ones() == 1 &&  byte_len as usize <= len && bytes[..byte_len as usize] == input[..byte_len as usize] {
 
-					// Remove when not debugging
-					for i in 1..byte_len {
-						input[i as usize] = b'_';
-					}
-
-
-					input[0] = num;
-					return byte_len as usize;
-				}
-			}
-		}
-	}
-	1
-}
-
-fn replace_numbers_to_digits(input: &mut [u8]) {
+pub fn solution_complex(input: &[u8]) -> u32 {
 	let mut lines = vec![];
 	let mut last = 0;
 	for (i, char) in input.iter().enumerate() {
 		if *char == b'\n' {
 			lines.push(last..i);
-			last  = i + 1;
+			last = i + 1;
 		}
 	}
-	// dbg!(lines.iter().map(|e|String::from_utf8_lossy(&input[e.clone()])).collect::<Vec<_>>());
-	for line in lines {
-		// println!("{}", String::from_utf8_lossy(&input[line.clone()]));
-		if line.len() < 3 {
-			continue;
+
+	lines.into_iter()
+		.map(|e| &input[e])
+		.map(|e| solve_line(e) as u32).sum()
+}
+
+fn solve_line(input: &[u8]) -> u8 {
+	let mut left = None;
+	let mut right = None;
+	let mut left_offset = input.len();
+	let mut right_offset = 0;
+
+	for (i, byte) in input.into_iter().enumerate() {
+		if byte.is_ascii_digit() {
+			if left.is_none() {
+				left = Some(*byte - 48);
+				left_offset = i;
+			}
+			right = Some(*byte - 48);
+			right_offset = i;
 		}
-		let line_cropped = &mut input[line.clone()];
-		let mut at = 0;
-		while at < line_cropped.len() {
-			at += replace_number_to_digit(&mut line_cropped[at..]);
-		}
-		// println!("{}", String::from_utf8_lossy(&input[line]));
 	}
+
+	let mut i = 0;
+
+	while i < input.len() {
+		let index = {
+			i..(i + size_of::<usize>()).min(input.len())
+		};
+
+		let bytes = &input[index.clone()];
+		let mut to_be_bits = [0, 0, 0, 0, 0, 0, 0, 0];
+		to_be_bits[..index.len()].copy_from_slice(bytes);
+
+
+		let bits = u64::from_ne_bytes(to_be_bits.try_into().unwrap());
+
+		let next_match = find_match(bits);
+		if let Some(matched) = next_match {
+			if i < left_offset {
+				left = Some(matched);
+				left_offset = i;
+			}
+			if i > right_offset {
+				right = Some(matched);
+				right_offset = i;
+			}
+			// i += (8 - bits.count_zeros())
+			i += 1;
+		} else {
+			i += 1;
+		}
+	}
+	left.unwrap() * 10 + right.or(left).unwrap()
 }
 
-pub fn solution_complex(input: &mut [u8]) -> u32 {
-	replace_numbers_to_digits(input);
-	solution(input)
+fn find_match(bits: u64) -> Option<u8> {
+	for (x, (number, mask)) in NUMS.into_iter().enumerate() {
+		if number == (mask & bits) {
+			// println!("Found {}!", String::from_utf8_lossy(&number.to_ne_bytes()));
+			return Some(x as u8 + 1);
+		}
+	}
+	None
 }
-
 
 #[cfg(test)]
 mod test {
@@ -132,16 +137,50 @@ zoneight234
 	}
 
 	#[test]
+	fn test_line_two1nine() {
+		assert_eq!(29, crate::solve_line(b"two1nine"));
+	}
+
+	#[test]
+	fn test_line_eightwothree() {
+		assert_eq!(83, crate::solve_line(b"eightwothree"));
+	}
+
+	#[test]
+	fn test_line_abcone2threexyz() {
+		assert_eq!(13, crate::solve_line(b"abcone2threexyz"));
+	}
+
+	#[test]
+	fn test_line_xtwone3four() {
+		assert_eq!(24, crate::solve_line(b"xtwone3four"));
+	}
+
+	#[test]
+	fn test_line_4nineeightseven2() {
+		assert_eq!(42, crate::solve_line(b"4nineeightseven2"));
+	}
+
+	#[test]
+	fn test_line_zoneight234() {
+		assert_eq!(14, crate::solve_line(b"zoneight234"));
+	}
+
+	#[test]
+	fn test_line_7pqrstsixteen() {
+		assert_eq!(76, crate::solve_line(b"7pqrstsixteen"));
+	}
+
+	#[test]
 	fn run_simple() {
 		let file = fs::read("input.txt").unwrap();
-		println!("{}", crate::solution(&file));
+		assert_eq!(crate::solution(&file), 56049);
 	}
 
 	#[test]
 	fn run_complex() {
 		let mut file = fs::read("input.txt").unwrap();
 		let res = crate::solution_complex(&mut file);
-		assert_ne!(res, 54538); // Confirmed wrong
-		println!("{}", res);
+		assert_eq!(res, 54530);
 	}
 }
