@@ -3,7 +3,7 @@
 https://adventofcode.com
 
 Checklist:
-- [ ] 01
+- [X] 01
 - [ ] 02
 - [ ] 03
 - [ ] 04
