@@ -4,6 +4,7 @@ resolver = "2"
 members = [
     "day_template",
     "day_01",
+    "day_02",
 ]
 
 [profile.bench]
